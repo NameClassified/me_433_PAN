@@ -11,6 +11,8 @@ class Signal:
         self.frq = 0.0
         self.Y = 0.0
         self.X = 0
+        self.A = 0
+        self.B = 0
 
     def set_Y(self, new_Y):
         self.Y = new_Y
@@ -22,7 +24,7 @@ class Signal:
         dt = 1.0/10000.0 # 10kH
         # a constant plus 100Hz and 1000Hz
         self.Fs = len(self.times)/self.times[-1] # sample rate
-        print(self.Fs)
+        #print(self.Fs)
         Ts = 1.0/self.Fs; # sampling interval
         y = self.values
         n = len(y) # length of the signal
@@ -35,6 +37,12 @@ class Signal:
     
     def get_x(self):
         return self.X
+
+    def get_a(self):
+        return self.A
+
+    def get_b(self):
+        return self.B
     
 
 
@@ -63,10 +71,25 @@ def maf(sig, X):
 def iir(sig, A, B):
     filtered_times = []
     filtered_values = []
-
-    current_sum = 0
+    
     current_avg = 0
     for idx in range(len(sig.values)):
+
+        weight_b = sig.values[idx]*B
+        if (idx == 0):
+            weight_a = 0
+        else:
+            weight_a = filtered_values[idx-1]*A
+        current_avg = weight_a+weight_b
+        filtered_values.append(current_avg)
+        filtered_times.append(sig.times[idx])
+    iir_signal = Signal(filtered_times, filtered_values)
+    iir_signal.A = A
+    iir_signal.B = B
+    iir_signal.calculate_fft()
+    iir_signals.append(iir_signal)
+    return iir_signal
+
 
 
 sigA_time = []
@@ -133,6 +156,10 @@ maf_c = maf(signal_C, 1000)
 maf_d = maf(signal_D, 450)
 
 
+iir_a = iir(signal_A, 0.999, 0.001)
+iir_b = iir(signal_B, 0.995, 0.005)
+iir_c = iir(signal_C, 0.2, 0.8)
+iir_d = iir(signal_D, 0.95, 0.05)
 
 ### PLOTTING CODE
 
@@ -210,31 +237,32 @@ def plot_fft_maf(unfiltered_signals, maf_signals):
 def plot_fft_iir(unfiltered_signals, iir_signals):
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
     fig.suptitle("IIR Filtered FFT Signals")
-    ax1.set_title(f"Signal A FFT, {maf_signals[0].get_x()} Data Points")
+    ax1.set_title(f"Signal A FFT, A = {iir_signals[0].get_a()}, B = {iir_signals[0].get_b()}")
     ax1.loglog(unfiltered_signals[0].frq, abs(unfiltered_signals[0].Y), color = 'black')
     ax1.loglog(iir_signals[0].frq, abs(iir_signals[0].Y), color = 'red')
     ax1.set_xlabel('Freq (Hz)')
     ax1.set_ylabel('|Y(freq)|')
 
-    ax2.set_title(f"Signal B FFT, {maf_signals[1].get_x()} Data Points")
+    ax2.set_title(f"Signal B FFT, A = {iir_signals[1].get_a()}, B = {iir_signals[1].get_b()}")
     ax2.loglog(unfiltered_signals[1].frq,abs(unfiltered_signals[1].Y), color = 'black')
     ax2.loglog(iir_signals[1].frq, abs(iir_signals[1].Y), color = 'red')
     ax2.set_xlabel('Freq (Hz)')
     ax2.set_ylabel('|Y(freq)|')
 
-    ax3.set_title(f"Signal C FFT, {maf_signals[2].get_x()} Data Points")
+    ax3.set_title(f"Signal C FFT, A = {iir_signals[2].get_a()}, B = {iir_signals[2].get_b()}")
     ax3.loglog(unfiltered_signals[2].frq,abs(unfiltered_signals[2].Y), color = 'black')
     ax3.loglog(iir_signals[2].frq, abs(iir_signals[2].Y), color = 'red')
     ax3.set_xlabel('Freq (Hz)')
     ax3.set_ylabel('|Y(freq)|')
 
-    ax4.set_title(f"Signal D FFT, {maf_signals[3].get_x()} Data Points")
+    ax4.set_title(f"Signal D FFT, A = {iir_signals[3].get_a()}, B = {iir_signals[3].get_b()}")
     ax4.loglog(unfiltered_signals[3].frq,abs(unfiltered_signals[3].Y), color = 'black')
     ax4.loglog(iir_signals[3].frq, abs(iir_signals[3].Y), color = 'red')
     ax4.set_xlabel('Freq (Hz)')
     ax4.set_ylabel('|Y(freq)|')
     plt.show()
+
 #plot_fft_unfiltered(signal_A, signal_B, signal_C, signal_D)
-plot_fft_maf(unfiltered, maf_signals)
+#plot_fft_maf(unfiltered, maf_signals)
 
-
+plot_fft_iir(unfiltered, iir_signals)
