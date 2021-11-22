@@ -1,0 +1,1 @@
+ $(MP_EXTRA_CC_PRE) -g -D__DEBUG   -fframe-base-loclist  -x c -c -mprocessor=$(MP_PROCESSOR_OPTION)  -I"st7789"   -DXPRJ_default=$(CND_CONF)  -legacy-libc  $(COMPARISON_BUILD)  -mdfp="${DFP_DIR}"  C:\Users\cjpan\Google Drive\Homework\ME_433_HOMEWORK\me_433_PAN\HW9\main.c
